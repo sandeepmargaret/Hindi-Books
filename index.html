@@ -41,13 +41,11 @@
             padding: 0 20px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             z-index: 1000;
-            
         }
 
         .header h1 {
             font-size: 1.5rem;
             font-weight: bold;
-            
         }
 
         .sidebar {
@@ -176,7 +174,6 @@
                 height: calc(100vh - 40px);
             }
         }
-        
     </style>
 </head>
 <body>
@@ -197,41 +194,30 @@
     </div>
 
     <script>
-        const library = {
-            "बाइबल अध्ययन": {
-                path: "bible-study",
-                books: [
-                    { title: "विषयात्मक बाइबल अध्ययन", filename: "विषयात्मक बाइबल अध्ययन.pdf" },
-                    { title: "नया नियम परिचय", filename: "new-testament-intro.pdf" }
-                ]
-            },
-            "मसीही जीवन": {
-                path: "christian-life",
-                books: [
-                    { title: "प्रार्थना का जीवन", filename: "prayer-life.pdf" },
-                    { title: "विश्वास का जीवन", filename: "faith-life.pdf" }
-                ]
-            },
-            "धर्मविज्ञान": {
-                path: "theology",
-                books: [
-                    { title: "मसीही धर्मशास्त्र", filename: "christian-theology.pdf" },
-                    { title: "मूल सिद्धांत", filename: "basic-doctrine.pdf" }
-                ]
-            },
-            "आराधना": {
-                path: "worship",
-                books: [
-                    { title: "भजन संग्रह", filename: "hymnal.pdf" },
-                    { title: "आराधना मार्गदर्शिका", filename: "worship-guide.pdf" }
-                ]
-            }
-        };
+        const GITHUB_API_URL = "https://api.github.com/repos/sandeepmargaret/Hindi-Books/contents/";
 
-        function initializeLibrary() {
+        async function fetchFiles(category) {
+            const response = await fetch(`${GITHUB_API_URL}${category}`);
+            const files = await response.json();
+            return files.filter(file => file.name.endsWith('.pdf')).map(file => ({
+                title: file.name.replace(/_/g, " ").replace(".pdf", ""),
+                path: file.path
+            }));
+        }
+
+        async function fetchAllFiles() {
+            const categories = ["bible-study", "christian-life", "theology", "worship"];
+            const library = {};
+            for (const category of categories) {
+                library[category] = await fetchFiles(category);
+            }
+            return library;
+        }
+
+        function initializeLibrary(library) {
             const categoryList = document.getElementById('categoryList');
 
-            for (const [category, data] of Object.entries(library)) {
+            for (const [category, books] of Object.entries(library)) {
                 const categoryElement = document.createElement('li');
                 categoryElement.className = 'category';
 
@@ -242,11 +228,11 @@
                 const bookList = document.createElement('ul');
                 bookList.className = 'book-list';
 
-                data.books.forEach(book => {
+                books.forEach(book => {
                     const bookItem = document.createElement('li');
                     bookItem.className = 'book-item';
                     bookItem.textContent = book.title;
-                    bookItem.onclick = () => loadBook(`${data.path}/${book.filename}`);
+                    bookItem.onclick = () => loadBook(book.path);
                     bookList.appendChild(bookItem);
                 });
 
@@ -278,10 +264,13 @@
             
             welcomeScreen.style.display = 'none';
             pdfViewer.style.display = 'block';
-            pdfViewer.src = `books/${path}`;
+            pdfViewer.src = `https://raw.githubusercontent.com/sandeepmargaret/Hindi-Books/main/${path}`;
         }
 
-        document.addEventListener('DOMContentLoaded', initializeLibrary);
+        document.addEventListener('DOMContentLoaded', async () => {
+            const library = await fetchAllFiles();
+            initializeLibrary(library);
+        });
     </script>
 </body>
 </html>
